@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 
 from NLPManager import NLPManager
 
-
+# install Docker, to test on web browser whether extract correctly
 app = FastAPI()
 
 nlp_manager = NLPManager()
