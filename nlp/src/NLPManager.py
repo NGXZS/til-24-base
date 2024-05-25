@@ -29,7 +29,7 @@ class NLPManager:
     def __init__(self):
         # initialize the model here
 
-        # Load pre-trained model and tokenizer
+        # Load pre-trained model and tokenizer (from https://huggingface.co/Intel/dynamic_tinybert)
         self.tokenizer = AutoTokenizer.from_pretrained("Intel/dynamic_tinybert")
         self.model = AutoModelForQuestionAnswering.from_pretrained("Intel/dynamic_tinybert")
 
@@ -57,18 +57,20 @@ class NLPManager:
         input_ids_tool = inputs_tool["input_ids"]
         input_ids_target = inputs_target["input_ids"]
 
-        attention_mask = inputs_heading["attention_mask"] # attention masking same for 3 questions?
+        attention_mask_heading = inputs_heading["attention_mask"]
+        attention_mask_tool = inputs_tool["attention_mask"]
+        attention_mask_target = inputs_target["attention_mask"]
 
         # Perform question answering
-        outputs_heading = self.model(input_ids_heading, attention_mask=attention_mask)
+        outputs_heading = self.model(input_ids_heading, attention_mask=attention_mask_heading)
         start_scores_heading = outputs_heading.start_logits
         end_scores_heading = outputs_heading.end_logits
 
-        outputs_tool = self.model(input_ids_tool, attention_mask=attention_mask)
+        outputs_tool = self.model(input_ids_tool, attention_mask=attention_mask_tool)
         start_scores_tool = outputs_tool.start_logits
         end_scores_tool = outputs_tool.end_logits
 
-        outputs_target = self.model(input_ids_target, attention_mask=attention_mask)
+        outputs_target = self.model(input_ids_target, attention_mask=attention_mask_target)
         start_scores_target = outputs_target.start_logits
         end_scores_target = outputs_target.end_logits
 
@@ -93,27 +95,28 @@ class NLPManager:
 
         return {"heading": answer_heading, "tool": answer_tool, "target": answer_target}
     
+def test(): # training purposes
+    NUM_OF_LINES = 5
+
+    file = open("nlp.jsonl", "r")
+    c = 0
+    for line in file: # 3500 lines
+        # dictObject = convertStringToDict(line)
+        # context = dictObject["transcript"] # same transcipt for 3 keys
+        
+        # QA
+        # model = NLPManager()
+        # qa_dict = model.qa(context)
+        # for key in qa_dict:
+        #     print(key, ':', qa_dict[key], '|', dictObject[key]) # prints qa v actual value
+        # printNewLine()
+
+        # for first specified objects in nlp.jsonl only
+        c += 1
+        # if c == NUM_OF_LINES:
+        #     break
+
+    # file.close()
     
-# training purposes
-NUM_OF_LINES = 5
 
-model = NLPManager()
-
-file = open("nlp.jsonl", "r")
-c = 0
-for line in file:
-    dictObject = convertStringToDict(line)
-
-    context = dictObject["transcript"] # same transcipt for 3 keys
-    # QA
-    qa_dict = model.qa(context)
-    for key in qa_dict:
-        print(key, ':', qa_dict[key], '|', dictObject[key]) # prints qa v actual value
-    printNewLine()
-
-    # for first specified objects in nlp.jsonl only
-    c += 1
-    if c == NUM_OF_LINES:
-        break
-
-file.close()
+test()
