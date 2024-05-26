@@ -4,7 +4,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from PIL import Image
 from urllib.request import urlretrieve
-from os import remove
+import os
 import json
 import torch
 from torchvision import transforms
@@ -34,7 +34,7 @@ def load_image(path_or_url):
     if path_or_url.startswith("http"):  # assume URL if starts with http
         urlretrieve(path_or_url, "imgs/tmp.jpg")
         img = cv2.imread("imgs/tmp.jpg")
-        remove("imgs/tmp.jpg")  # cleanup temporary file
+        os.remove("imgs/tmp.jpg")  # cleanup temporary file
     else:
         img = cv2.imread(path_or_url)
     return img
@@ -44,6 +44,13 @@ def read_jsonl(file_path):
         lines = file.readlines()
         data = [json.loads(line) for line in lines]
     return data
+
+def file_exists(file_path):
+    try:
+        return os.path.isfile(file_path)
+    except Exception as e:
+        print(f"Error checking file existence: {e}")
+        return False
 
 def create_annotations_list(filename):
     data = read_jsonl(filename)
@@ -55,6 +62,7 @@ def create_annotations_list(filename):
     return annotations_list
 
 annotations_list = create_annotations_list("vlm_sample.jsonl")
+
 entry = annotations_list[1]
 dataset = []
 for entry in annotations_list:
@@ -133,8 +141,11 @@ for epoch in range(num_epochs):
     val_loss /= len(val_loader)
     print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
 
-'''
-plt.imshow(img[..., ::-1])  # Image with RGB
-plt.axis('off')
-plt.show()
-'''
+torch.save(model.state_dict(), 'clip_model_weights.pth')
+
+
+#plt.imshow(img[..., ::-1])  # Image with RGB
+#plt.axis('off')
+#plt.show()
+
+print(len(annotations_list))
