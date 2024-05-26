@@ -67,31 +67,39 @@ def createNewJSON():    # https://www.datacamp.com/tutorial/json-data-python
 
     with open('nlp.jsonl', 'r') as file:
         newFile = open('nlpNew.jsonl', 'a')
+        c = 0
         for line in file:
             dictObject = json.loads(line)
+            context=dictObject['transcript']
+            answerDict = {"text": [], "answer_start": []}
+
             # process dictObject
             for i in range(NUM_OF_QUESTIONS):
                 current_key = keyList[i]
-                current_question = questionList[i]
 
                 correct_answer = dictObject[current_key]
-                answer_start = getAnswerStart(context=dictObject['transcript'], answer=correct_answer)
+                answer_start = getAnswerStart(context=context, answer=correct_answer)
 
-                answerDict = {"text": [], "answer_start": []}
                 answerDict["text"].append(correct_answer)
                 answerDict["answer_start"].append(answer_start)
-                # add new keys
-                dictObject['context'] = dictObject['transcript']
-                dictObject['question'] = current_question
-                dictObject['answers'] = answerDict
+                
                 # delete old keys
-                del dictObject['transcript']
-                del dictObject['tool']
-                del dictObject['heading']
-                del dictObject['target']
-                # update in newFile
-                json.dump(dictObject, newFile)
-                newFile.write('\n')
+                del dictObject[current_key]
+
+            # add common key
+            dictObject['context'] = context
+            dictObject['question'] = questionList
+            dictObject['answers'] = answerDict
+            # delete common key
+            del dictObject['transcript']
+            # update in newFile
+            json.dump(dictObject, newFile)
+            newFile.write('\n')
+
+            c += 1
+            print(c)
+            if (c == 10):
+                break
 
         newFile.close()
     return
@@ -144,7 +152,7 @@ def preprocess_function(examples):
     inputs['end_positions'] = end_positions
     return inputs
 
-
+# Reads a line and returns a dictionary object
 def getJSON(dataFilePath, line_num):   
 
     with open(dataFilePath, 'r') as file:
@@ -162,74 +170,70 @@ nlp = NLPManager()
 tokenizer = nlp.tokenizer
 model = nlp.model
 dataFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/nlpNew.jsonl'
-
+print("here")
 if (os.path.exists(dataFilePath)) :
     print("file exists")
     pass
 else : # file does not exist
+    print("created file")
     createNewJSON() 
+    
 
-LINE_NUM = 10
-answerObject = {}
-qa_dict = {}
-new_qa_dict = {}
+# LINE_NUM = 10
+# answerObject = {}
+# qa_dict = {}
+# new_qa_dict = {}
 
-for i in range(1, LINE_NUM):
-    answerObject[i] = getJSON(dataFilePath, i) # for 1 line num
-    context = answerObject[i]['context']
-    answer = answerObject[i]['answers']['text'][0] # for target only
+# for i in range(1, LINE_NUM):
+#     answerObject[i] = getJSON(dataFilePath, i) # for 1 line num
+#     context = answerObject[i]['context']
+#     answer = answerObject[i]['answers']['text'][0] # for target only
 
-    qa_dict[i] = nlp.qa(context)
+#     qa_dict[i] = nlp.qa(context)
 
-    # compare truth v qa 
-    # print(f"(BEFORE) line {i}")
-    # for key in qa_dict[i]:
-    #     print(key, ':', qa_dict[i][key], '|', answer)
-    # printNewLine()
+# ## training using own data
+# dataset = load_dataset('json', data_files='nlpNew.jsonl', split='train[:100]')
+# dataset = dataset.train_test_split(test_size=0.2)
 
-## training using own data
-dataset = load_dataset('json', data_files='nlpNew.jsonl', split='train[:100]')
-dataset = dataset.train_test_split(test_size=0.2)
+# ## training with squad dataset
+# # squad = load_dataset('squad', split='train[:100]')
+# # squad = squad.train_test_split(test_size=0.2) # returns Dict w train, test sets
 
-## training with squad dataset
-# squad = load_dataset('squad', split='train[:100]')
-# squad = squad.train_test_split(test_size=0.2) # returns Dict w train, test sets
+# tokenized_dataset = dataset.map(preprocess_function, batched=True)
+# data_collator = DefaultDataCollator()
 
-tokenized_dataset = dataset.map(preprocess_function, batched=True)
-data_collator = DefaultDataCollator()
+# training_args = TrainingArguments(
+#     output_dir='qa_model',
+#     evaluation_strategy='epoch',
+#     learning_rate=2e-5,
+#     per_device_train_batch_size=16,
+#     per_device_eval_batch_size=16,
+#     num_train_epochs=1,
+#     weight_decay=0.01,
+#     push_to_hub=False,
+#     )
 
-training_args = TrainingArguments(
-    output_dir='qa_model',
-    evaluation_strategy='epoch',
-    learning_rate=2e-5,
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
-    num_train_epochs=1,
-    weight_decay=0.01,
-    push_to_hub=False,
-    )
+# trainer = Trainer(
+#     model=model,
+#     args=training_args,
+#     train_dataset=tokenized_dataset['train'],
+#     eval_dataset=tokenized_dataset['test'],
+#     tokenizer=tokenizer,
+#     data_collator=data_collator,
+# )
 
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_dataset['train'],
-    eval_dataset=tokenized_dataset['test'],
-    tokenizer=tokenizer,
-    data_collator=data_collator,
-)
+# trainer.train()
 
-trainer.train()
+# model.eval() # eval mode
+# with torch.no_grad():
+#     for i in range(1, LINE_NUM):
+#         context = answerObject[i]['context']
+#         answer = answerObject[i]['answers']['text'][0] # actual answer (for target only)
 
-model.eval() # eval mode
-with torch.no_grad():
-    for i in range(1, LINE_NUM):
-        context = answerObject[i]['context']
-        answer = answerObject[i]['answers']['text'][0] # actual answer (for target only)
+#         new_qa_dict[i] = nlp.qa(context) # trained model
 
-        new_qa_dict[i] = nlp.qa(context) # trained model
-
-        # compare truth v qa 
-        print(f"(BEFORE v AFTER v ACTUAL) line {i}")
-        for key in new_qa_dict[i]:
-            print(key, qa_dict[i][key], new_qa_dict[i][key], answer, sep=' | ')
-        printNewLine()
+#         # compare truth v qa 
+#         print(f"(BEFORE v AFTER v ACTUAL) line {i}")
+#         for key in new_qa_dict[i]:
+#             print(key, qa_dict[i][key], new_qa_dict[i][key], answer, sep=' | ')
+#         printNewLine()
