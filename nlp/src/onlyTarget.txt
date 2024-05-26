@@ -1,0 +1,44 @@
+(BEFORE v AFTER v ACTUAL) line 1
+heading|zero six five||grey and white fighter jet
+tool|fighter jet|fighter jet|grey and white fighter jet
+target|fighter jet|fighter jet|grey and white fighter jet
+*************************************
+(BEFORE v AFTER v ACTUAL) line 2
+heading|two three five|surface - to - air missiles, heading two three five|yellow drone
+tool||surface - to - air missiles|yellow drone
+target|surface - to - air missiles, heading two three five||yellow drone
+*************************************
+(BEFORE v AFTER v ACTUAL) line 3
+heading|deploy emp|control to turrets, deploy electromagnetic pulse, heading one one zero. engage blue and red fighter plane. repeat, deploy emp|blue and red fighter plane
+tool|control to turrets, deploy electromagnetic pulse, heading one one zero. engage blue and red fighter plane. repeat, deploy emp|control to turrets, deploy electromagnetic pulse, heading one one zero. engage blue and red fighter plane. repeat, deploy emp|blue and red fighter plane
+target|control to turrets, deploy electromagnetic pulse, heading one one zero. engage blue and red fighter plane. repeat, deploy emp|control to turrets, deploy electromagnetic pulse, heading one one zero. engage blue and red fighter plane. repeat, deploy emp|blue and red fighter plane
+*************************************
+(BEFORE v AFTER v ACTUAL) line 4
+heading|zero eight five|red|purple, red, and silver fighter jet
+tool|emp tool heading zero eight five, engage purple, red, and silver fighter jet|emp tool heading zero eight five, engage purple, red, and silver fighter jet|purple, red, and silver fighter jet
+target|echo, mike papa, deploy emp tool heading zero eight five, engage purple, red|red, and silver fighter jet|purple, red, and silver fighter jet
+*************************************
+(BEFORE v AFTER v ACTUAL) line 5
+heading|niner five|niner five|grey, black, and green fighter plane
+tool|niner five|niner five|grey, black, and green fighter plane
+target|niner five|niner five|grey, black, and green fighter plane
+*************************************
+(BEFORE v AFTER v ACTUAL) line 6
+heading|air defense turret, lock onto target black and yellow missile at heading zero one five|air defense turret, lock onto target black and yellow missile at heading zero one five|black and yellow missile
+tool|air defense turret|air defense turret|black and yellow missile
+target|air defense turret, lock onto target black and yellow missile at heading zero one five|air defense turret, lock onto target black and yellow missile|black and yellow missile
+*************************************
+(BEFORE v AFTER v ACTUAL) line 7
+heading|zero eight five|zero eight five|green, grey, and brown cargo aircraft
+tool|control, heading zero eight five, deploy electromagnetic pulse on the green, grey, and brown cargo|control, heading zero eight five, deploy electromagnetic pulse on the green, grey, and brown cargo|green, grey, and brown cargo aircraft
+target|cargo|cargo|green, grey, and brown cargo aircraft
+*************************************
+(BEFORE v AFTER v ACTUAL) line 8
+heading|control to air defense turrets, prepare to engage target at heading zero four five. deploy anti - air artillery|control to air defense turrets, prepare to engage target at heading zero four five. deploy anti - air artillery|white light aircraft
+tool|control to air defense turrets, prepare to engage target at heading zero four five. deploy anti - air artillery|control to air defense turrets, prepare to engage target at heading zero four five. deploy anti - air artillery|white light aircraft
+target|control to air defense turrets, prepare to engage target at heading zero four five. deploy anti - air artillery|control to air defense turrets, prepare to engage target at heading zero four five. deploy anti - air artillery against white light aircraft|white light aircraft
+*************************************
+(BEFORE v AFTER v ACTUAL) line 9
+heading|deploy anti - air artillery to intercept the orange and blue light aircraft heading two one five|deploy anti - air artillery to intercept the orange and blue light aircraft|orange and blue light aircraft
+tool|deploy anti - air artillery|deploy anti - air artillery|orange and blue light aircraft
+target|deploy anti - air artillery to intercept the orange and blue light aircraft|deploy anti - air artillery to intercept the orange and blue light aircraft|orange and blue light aircraft
