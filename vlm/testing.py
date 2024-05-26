@@ -2,7 +2,6 @@ import torch
 from transformers import CLIPProcessor, CLIPModel
 from PIL import Image
 import matplotlib.pyplot as plt
-import training.py
 
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 model.load_state_dict(torch.load('clip_model_weights.pth'))
@@ -25,3 +24,15 @@ def predict_bbox(image_path, caption):
     predicted_bbox = [50, 50, 100, 100]
     return predicted_bbox
 
+image_path = input("Insert image: ")
+caption = input("Insert caption: ")
+bbox = predict_bbox(image_path, caption)
+
+# Display the image with the predicted bounding box
+image = load_image(image_path)
+plt.imshow(image)
+rect = plt.Rectangle((bbox[0], bbox[1]), bbox[2] - bbox[0], bbox[3] - bbox[1],
+                     edgecolor='red', facecolor='none', linewidth=2)
+plt.gca().add_patch(rect)
+plt.axis("off")
+plt.show()
