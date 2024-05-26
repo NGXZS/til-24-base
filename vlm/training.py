@@ -90,48 +90,51 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
 num_epochs = 3
 
-train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [int(0.8 * len(train_dataset)), len(train_dataset) - int(0.8 * len(train_dataset))])
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
+num_of_iterations = 2
 
-for epoch in range(num_epochs):
-    model.train()
-    for batch in train_loader:
-        optimizer.zero_grad()
+for iteration in range(num_of_iterations):
+    train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [int(0.8 * len(train_dataset)), len(train_dataset) - int(0.8 * len(train_dataset))])
+    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
+
+    for epoch in range(num_epochs):
+        model.train()
+        for batch in train_loader:
+            optimizer.zero_grad()
         
-        batch = {k: v.squeeze().to(device) for k, v in batch.items()}
-        outputs = model(**batch)
-        
-        logits_per_image = outputs.logits_per_image
-        logits_per_text = outputs.logits_per_text
-        
-        labels = torch.arange(logits_per_image.size(0), device=device)
-        loss_img = torch.nn.functional.cross_entropy(logits_per_image, labels)
-        loss_txt = torch.nn.functional.cross_entropy(logits_per_text, labels)
-        loss = (loss_img + loss_txt) / 2
-        
-        loss.backward()
-        optimizer.step()
-    
-    model.eval()
-    val_loss = 0
-    with torch.no_grad():
-        for batch in val_loader:
             batch = {k: v.squeeze().to(device) for k, v in batch.items()}
             outputs = model(**batch)
-            
+        
             logits_per_image = outputs.logits_per_image
             logits_per_text = outputs.logits_per_text
-            
+        
             labels = torch.arange(logits_per_image.size(0), device=device)
             loss_img = torch.nn.functional.cross_entropy(logits_per_image, labels)
             loss_txt = torch.nn.functional.cross_entropy(logits_per_text, labels)
             loss = (loss_img + loss_txt) / 2
-            
-            val_loss += loss.item()
+        
+            loss.backward()
+            optimizer.step()
     
-    val_loss /= len(val_loader)
-    print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for batch in val_loader:
+                batch = {k: v.squeeze().to(device) for k, v in batch.items()}
+                outputs = model(**batch)
+            
+                logits_per_image = outputs.logits_per_image
+                logits_per_text = outputs.logits_per_text
+            
+                labels = torch.arange(logits_per_image.size(0), device=device)
+                loss_img = torch.nn.functional.cross_entropy(logits_per_image, labels)
+                loss_txt = torch.nn.functional.cross_entropy(logits_per_text, labels)
+                loss = (loss_img + loss_txt) / 2
+            
+                val_loss += loss.item()
+    
+        val_loss /= len(val_loader)
+        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
 
 '''
 plt.imshow(img[..., ::-1])  # Image with RGB
