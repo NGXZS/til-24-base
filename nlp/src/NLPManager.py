@@ -1,6 +1,7 @@
 from typing import Dict
 import torch
 import json
+import os.path
 
 # Load model directly
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering, DefaultDataCollator, TrainingArguments, Trainer
@@ -134,22 +135,27 @@ def preprocess_function(examples):
     inputs['end_positions'] = end_positions
     return inputs
 
-import os.path
+getJSON(dataFilePath, line_num) 
 
 nlp = NLPManager()
 tokenizer = nlp.tokenizer
 model = nlp.model
+dataFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/nlpNew.jsonl'
 
-if (os.path.exists('C:/Users/sean.ng/Downloads/til-24-base/nlp/nlpNew.jsonl')) :
+if (os.path.exists(dataFilePath)) :
     print("file exists")
     pass
 else : # file does not exist
     createNewJSON() 
 
 
-# line_num = 4
-# context, truth_dict = getContextAndAnswers(nlp, line_num) # for 1 line num
-# answer_dict = nlp.qa(context)
+line_num = 4
+answerObject = getJSON(dataFilePath, line_num) # for 1 line num
+context = answerObject['context']
+answer = answerObject['answer']['text']
+print(context, answer, sep='|')
+
+answer_dict = nlp.qa(context)
 
 # compare truth v qa 
 # print("BEFORE")
@@ -158,18 +164,14 @@ else : # file does not exist
 # printNewLine()
 
 ## training using own data
-dataset = load_dataset('json', data_files='nlpNew.jsonl', split='train[:100]')
-dataset = dataset.train_test_split(test_size=0.2)
-print(dataset)
-# dataset_train, dataset_test = load_dataset('json', data_files='nlpNew.jsonl', split=['train[:3400]', 'train[3400:]'])
-# print(dataset_train)
-# print(dataset_test)
+# dataset = load_dataset('json', data_files='nlpNew.jsonl', split='train[:100]')
+# dataset = dataset.train_test_split(test_size=0.2)
 
 ## training with squad dataset
 # squad = load_dataset('squad', split='train[:100]')
 # squad = squad.train_test_split(test_size=0.2) # returns Dict w train, test sets
 
-tokenized_dataset = dataset.map(preprocess_function, batched=True)
+# tokenized_dataset = dataset.map(preprocess_function, batched=True)
 # data_collator = DefaultDataCollator()
 
 # training_args = TrainingArguments(
@@ -186,8 +188,8 @@ tokenized_dataset = dataset.map(preprocess_function, batched=True)
 # trainer = Trainer(
 #     model=model,
 #     args=training_args,
-#     train_dataset=tokenized_dataset, #tokenized_squad['train'],
-#     eval_dataset=dataset_test, #tokenized_squad['test'],
+#     train_dataset=tokenized_dataset['train'],
+#     eval_dataset=tokenized_dataset['test'],
 #     tokenizer=tokenizer,
 #     data_collator=data_collator,
 # )
