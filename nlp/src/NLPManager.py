@@ -1,5 +1,6 @@
 from typing import Dict
 import torch
+import json
 
 # Load model directly
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering, DefaultDataCollator, TrainingArguments, Trainer
@@ -48,53 +49,49 @@ class NLPManager:
 
         return answer_dict
 
-# GOAL: from "transcript" key, GET the 3 other keys
-# access "transcript key" in string form DONE
-def convertStringToDict(str):
-    dict = {}
-    for item in str.split(', "'):
-        key, value = item.split(":")
-
-        # process key, value
-        newKey = key.strip('{"')
-        newValue = value.strip(' "}\n')
-
-        # store in dict
-        dict[newKey] = newValue
-
-    # print(dict.keys())
-    # print(dict.values())
-    return dict
-
 def printNewLine():
     print("*************************************")
 
-def getContextAndAnswers(nlp, line_num): # 1 to 3500
-    NOT_FILLED = "not filled"
-    context = NOT_FILLED
-    actual_answers = {"heading": NOT_FILLED, "tool": NOT_FILLED, "target": NOT_FILLED}
-    c = 0
+def getAnswerStart(context:str, answer:str):
+    return context.find(answer)
 
-    file = open("nlp.jsonl", "r")
-    for line in file: # 3500 lines
-        c += 1
-        if c == line_num:
-            dictObject = convertStringToDict(line)
+def createNewJSON():
+    QUESTION_HEADING = "What is the heading?"
+    QUESTION_TOOL = "What is the tool?"
+    QUESTION_TARGET = "What is the target?"
 
-            context = dictObject["transcript"] # same transcipt for 3 keys
-            for key in actual_answers:
-                actual_answers[key] = dictObject[key]
-            break
+    with open('nlp.jsonl', 'r') as file:
+        newFile = open('nlpNew.jsonl', 'a')
+        for line in file:
+            dictObject = json.loads(line)
+            # process dictObject
+            # add new keys
+            correct_answer = dictObject['target']
+            answer_start = getAnswerStart(context=dictObject['transcript'], answer=correct_answer)
 
-    file.close()
-    return context, actual_answers
+            answerDict = {"text": [correct_answer], "answer_start": [answer_start]}
+            dictObject['context'] = dictObject['transcript']
+            dictObject['question'] = QUESTION_TARGET
+            dictObject['answers'] = answerDict
+
+            # delete old keys
+            del dictObject['transcript']
+            del dictObject['tool']
+            del dictObject['heading']
+            del dictObject['target']
+
+            json.dump(dictObject, newFile)
+            newFile.write('\n')
+
+        newFile.close()
+    return
 
 def preprocess_function(examples):
     questions = [q.strip() for q in examples['question']]
     inputs = tokenizer(
         questions,
         examples['context'],
-        max_length=128,
+        max_length=128, # change?
         truncation='only_second',
         return_offsets_mapping=True, 
         padding='max_length',
@@ -137,29 +134,42 @@ def preprocess_function(examples):
     inputs['end_positions'] = end_positions
     return inputs
 
+import os.path
+
 nlp = NLPManager()
 tokenizer = nlp.tokenizer
 model = nlp.model
 
-line_num = 4
-context, truth_dict = getContextAndAnswers(nlp, line_num) # for 1 line num
-answer_dict = nlp.qa(context)
+if (os.path.exists('C:/Users/sean.ng/Downloads/til-24-base/nlp/nlpNew.jsonl')) :
+    print("file exists")
+    pass
+else : # file does not exist
+    createNewJSON() 
+
+
+# line_num = 4
+# context, truth_dict = getContextAndAnswers(nlp, line_num) # for 1 line num
+# answer_dict = nlp.qa(context)
 
 # compare truth v qa 
-print("BEFORE")
-for key in answer_dict:
-    print(key, ':', answer_dict[key], '|', truth_dict[key])
-printNewLine()
+# print("BEFORE")
+# for key in answer_dict:
+#     print(key, ':', answer_dict[key], '|', truth_dict[key])
+# printNewLine()
 
 ## training using own data
-dataset_train, dataset_test = load_dataset('json', data_files='nlp.jsonl', split=['train[:3400]', 'train[3400:]'])
-print(dataset_train)
-print(dataset_test)
+dataset = load_dataset('json', data_files='nlpNew.jsonl', split='train[:100]')
+dataset = dataset.train_test_split(test_size=0.2)
+print(dataset)
+# dataset_train, dataset_test = load_dataset('json', data_files='nlpNew.jsonl', split=['train[:3400]', 'train[3400:]'])
+# print(dataset_train)
+# print(dataset_test)
 
+## training with squad dataset
 # squad = load_dataset('squad', split='train[:100]')
 # squad = squad.train_test_split(test_size=0.2) # returns Dict w train, test sets
 
-# tokenized_squad = squad.map(preprocess_function, batched=True)
+tokenized_dataset = dataset.map(preprocess_function, batched=True)
 # data_collator = DefaultDataCollator()
 
 # training_args = TrainingArguments(
@@ -176,8 +186,8 @@ print(dataset_test)
 # trainer = Trainer(
 #     model=model,
 #     args=training_args,
-#     train_dataset=tokenized_squad['train'],
-#     eval_dataset=tokenized_squad['test'],
+#     train_dataset=tokenized_dataset, #tokenized_squad['train'],
+#     eval_dataset=dataset_test, #tokenized_squad['test'],
 #     tokenizer=tokenizer,
 #     data_collator=data_collator,
 # )
@@ -193,4 +203,3 @@ print(dataset_test)
 #     for key in new_answer_dict:
 #         print(key, ':', new_answer_dict[key], '|', answer_dict[key])
 #     printNewLine()
-
