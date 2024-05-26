@@ -14,7 +14,7 @@ import os
 class ASRManager:
     def __init__(self):
         # initialize the model here
-        model_name = 'results/best_model'
+        model_name = "facebook/wav2vec2-base-960h"
         self.processor = Wav2Vec2Processor.from_pretrained(model_name)
         self.model = Wav2Vec2ForCTC.from_pretrained(model_name)
     
