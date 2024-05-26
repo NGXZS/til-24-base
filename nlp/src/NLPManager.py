@@ -8,6 +8,12 @@ import linecache
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering, DefaultDataCollator, TrainingArguments, Trainer
 from datasets import load_dataset
 
+dataFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/nlpNew.jsonl'
+headingFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/src/heading.jsonl'
+toolFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/src/tool.jsonl'
+targetFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/src/target.jsonl'
+filePathList = [headingFilePath, toolFilePath, targetFilePath, dataFilePath]
+
 class NLPManager:
     def __init__(self):
         # initialize the model here
@@ -50,6 +56,11 @@ class NLPManager:
             answer_dict[key] = answer
 
         return answer_dict
+    
+def clearAllJSON():
+    for filePath in filePathList:
+        open(filePath, 'w').close()
+    return
 
 def printNewLine():
     print("*************************************")
@@ -97,7 +108,31 @@ def createNewJSON():    # https://www.datacamp.com/tutorial/json-data-python
             newFile.write('\n')
 
             c += 1
-            print(c)
+            if (c == 10):
+                break
+
+        newFile.close()
+    return
+
+def createQuestionJSON(dataFilePath, targetFilePath, question, questionIndex):
+    
+    with open(dataFilePath, 'r') as file:
+        newFile = open(targetFilePath, 'a')
+        c = 0
+
+        for line in file:
+            dictObject = json.loads(line)
+
+            # process dictObject
+            dictObject['question'] = question
+            dictObject['answers']['text'] = [dictObject['answers']['text'][questionIndex]]
+            dictObject['answers']['answer_start'] = [dictObject['answers']['answer_start'][questionIndex]]
+                
+            # update in newFile
+            json.dump(dictObject, newFile)
+            newFile.write('\n')
+
+            c += 1
             if (c == 10):
                 break
 
@@ -153,15 +188,13 @@ def preprocess_function(examples):
     return inputs
 
 # Reads a line and returns a dictionary object
-def getJSON(dataFilePath, line_num):   
-
-    with open(dataFilePath, 'r') as file:
-        # get line_num
-        line = linecache.getline(filename=dataFilePath, lineno=line_num)
-        
-        #convert line to dict
-        dictObject = json.loads(line)
-        linecache.clearcache()
+def getJSON(dataFilePath, line_num): 
+    # get line_num
+    line = linecache.getline(filename=dataFilePath, lineno=line_num)
+    
+    #convert line to dict
+    dictObject = json.loads(line)
+    linecache.clearcache()
         
     return dictObject
 
@@ -169,71 +202,83 @@ def getJSON(dataFilePath, line_num):
 nlp = NLPManager()
 tokenizer = nlp.tokenizer
 model = nlp.model
-dataFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/nlpNew.jsonl'
+
+clearAllJSON()
 print("here")
-if (os.path.exists(dataFilePath)) :
-    print("file exists")
-    pass
-else : # file does not exist
-    print("created file")
-    createNewJSON() 
-    
 
-# LINE_NUM = 10
-# answerObject = {}
-# qa_dict = {}
-# new_qa_dict = {}
+createNewJSON() 
+print("created file")    
 
-# for i in range(1, LINE_NUM):
-#     answerObject[i] = getJSON(dataFilePath, i) # for 1 line num
-#     context = answerObject[i]['context']
-#     answer = answerObject[i]['answers']['text'][0] # for target only
+LINE_NUM = 10
 
-#     qa_dict[i] = nlp.qa(context)
+answerObject = {} # ground truth
+qa_dict = {} # pre-trained model results {i: {heading: '', tool: '', target: ''}
+new_qa_dict = {} # trained model results
 
-# ## training using own data
-# dataset = load_dataset('json', data_files='nlpNew.jsonl', split='train[:100]')
-# dataset = dataset.train_test_split(test_size=0.2)
+for i in range(1, LINE_NUM):
+    answerObject[i] = getJSON(dataFilePath, i) # for 1 line num
+    context = answerObject[i]['context']
+    answer = answerObject[i]['answers']['text'][0] # for target only
 
-# ## training with squad dataset
-# # squad = load_dataset('squad', split='train[:100]')
-# # squad = squad.train_test_split(test_size=0.2) # returns Dict w train, test sets
+    qa_dict[i] = nlp.qa(context)
 
-# tokenized_dataset = dataset.map(preprocess_function, batched=True)
-# data_collator = DefaultDataCollator()
+## create 3 JSON for each question
+QUESTION_HEADING = "What is the heading?"
+QUESTION_TOOL = "What is the tool?"
+QUESTION_TARGET = "What is the target?"
+questionList = [QUESTION_HEADING, QUESTION_TOOL, QUESTION_TARGET]
+# indexToHeadingMap = {0: 'heading', 1: 'tool', 2: 'target'}
 
-# training_args = TrainingArguments(
-#     output_dir='qa_model',
-#     evaluation_strategy='epoch',
-#     learning_rate=2e-5,
-#     per_device_train_batch_size=16,
-#     per_device_eval_batch_size=16,
-#     num_train_epochs=1,
-#     weight_decay=0.01,
-#     push_to_hub=False,
-#     )
+for question in questionList:
+    i = questionList.index(question)
+    specificDataFilePath = filePathList[i]
+    createQuestionJSON(dataFilePath, specificDataFilePath, question, i)
 
-# trainer = Trainer(
-#     model=model,
-#     args=training_args,
-#     train_dataset=tokenized_dataset['train'],
-#     eval_dataset=tokenized_dataset['test'],
-#     tokenizer=tokenizer,
-#     data_collator=data_collator,
-# )
+    ## training using own data
+    dataset = load_dataset('json', data_files=specificDataFilePath, split='train[:100]')
+    dataset = dataset.train_test_split(test_size=0.2)
 
-# trainer.train()
+    # ## training with squad dataset
+    # # squad = load_dataset('squad', split='train[:100]')
+    # # squad = squad.train_test_split(test_size=0.2) # returns Dict w train, test sets
 
-# model.eval() # eval mode
-# with torch.no_grad():
-#     for i in range(1, LINE_NUM):
-#         context = answerObject[i]['context']
-#         answer = answerObject[i]['answers']['text'][0] # actual answer (for target only)
+    tokenized_dataset = dataset.map(preprocess_function, batched=True)
+    data_collator = DefaultDataCollator()
 
-#         new_qa_dict[i] = nlp.qa(context) # trained model
+    training_args = TrainingArguments(
+        output_dir='qa_model',
+        evaluation_strategy='epoch',
+        learning_rate=2e-5,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
+        num_train_epochs=1,
+        weight_decay=0.01,
+        push_to_hub=False,
+        )
 
-#         # compare truth v qa 
-#         print(f"(BEFORE v AFTER v ACTUAL) line {i}")
-#         for key in new_qa_dict[i]:
-#             print(key, qa_dict[i][key], new_qa_dict[i][key], answer, sep=' | ')
-#         printNewLine()
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_dataset['train'],
+        eval_dataset=tokenized_dataset['test'],
+        tokenizer=tokenizer,
+        data_collator=data_collator,
+    )
+
+    trainer.train()
+
+model.eval() # eval mode
+with torch.no_grad():
+    for line in range(1, LINE_NUM):
+        context = answerObject[line]['context']
+
+        new_qa_dict[line] = nlp.qa(context) # trained model # {line: {heading: '', tool: '', target: ''}
+
+        # compare truth v qa 
+        print(f"(BEFORE v AFTER v ACTUAL) line {line}")
+        i = 0
+        for key in new_qa_dict[line]:
+            answer = answerObject[line]['answers']['text'][i] # actual answer (for target only)
+            print(key, qa_dict[line][key], new_qa_dict[line][key], answer, sep=' | ')
+            i = i + 1 if (i < 2) else 0
+        printNewLine()
