@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request
 
-from NLPManager import NLPManager
+from NLPManager2 import NLPManager2
 
 # install Docker, to test on web browser whether extract correctly
 app = FastAPI()
 
-nlp_manager = NLPManager()
+nlp_manager = NLPManager2()
 
 
 @app.get("/health")

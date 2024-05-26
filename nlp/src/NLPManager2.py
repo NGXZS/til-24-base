@@ -13,14 +13,11 @@ toolFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/src/tool.jsonl'
 targetFilePath = 'C:/Users/sean.ng/Downloads/til-24-base/nlp/src/target.jsonl'
 filePathList = [headingFilePath, toolFilePath, targetFilePath, dataFilePath]
 
-class NLPManager:
+class NLPManager2:
     def __init__(self):
         # initialize the model here
-
-        # Load pre-trained model and tokenizer (from https://huggingface.co/Intel/dynamic_tinybert)
-        self.tokenizer = AutoTokenizer.from_pretrained("Intel/dynamic_tinybert")
-        self.model = AutoModelForQuestionAnswering.from_pretrained("Intel/dynamic_tinybert")
-        # print(self.model.config.max_position_embeddings) # sees max length for context = 512
+        self.model = torch.load('savedModel.pth')
+        return
     
     def qa(self, context: str) -> Dict[str, str]:
         ########## perform NLP question-answering ##########
